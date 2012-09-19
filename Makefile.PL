@@ -15,4 +15,3 @@ my $mm = WriteMakefile(
     DEFINE            => '-Dbool=int -DTRUE=1 -DFALSE=0 -DMAXFLOAT=9.99e99', # e.g., '-DHAVE_SOMETHING'
     OPTIMIZE          => '-g',
 );
-

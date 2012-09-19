@@ -6,7 +6,7 @@ Author: leonid.butenko@eumetsat.int
 
 INSTALLATION
 
-> make -f Makefile.PL [INSTALL_BASE=/path/to/install]
+> perl Makefile.PL [INSTALL_BASE=/path/to/install]
 > make install
 
 USAGE
