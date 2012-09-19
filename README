@@ -1,0 +1,27 @@
+EPSar v1.0                                  EUMETSAT (c) 2012
+
+EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF data records.
+
+Author: leonid.butenko@eumetsat.int
+
+INSTALLATION
+
+> make -f Makefile.PL [INSTALL_BASE=/path/to/install]
+> make install
+
+USAGE
+
+epsar -x -c -v -t [-m <MPHR>] <EPS_Product> [file1] ... [fileN]
+
+-x           Unwrap EPS product. e.g:
+                 epsar -x <EPS_PRODUCT>
+-c           Create EPS product from a set of n4 files (NetCDF 4) and MPHR file. e.g:
+                 epsar -c -m <MPHR> <netCDF4 files to wrap>
+-t           Lists the NetCDF files contained inside the EPS product.
+-v           Verbose output (default silent)
+-m           For -c option defines MPHR file containing the correct product model
+--extract    same as -x
+--create     same as -c
+--verbose    same as -v
+--list       same as -t
+--mphr       same as -m
