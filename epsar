@@ -40,14 +40,18 @@ our $mdrCount = 0;
 
 Getopt::Long::Configure(qw{no_auto_abbrev no_ignore_case_always});
 
-our($opt_x, $opt_c, $opt_t, $opt_v, $opt_m);
+our($opt_x, $opt_c, $opt_t, $opt_v, $opt_m, $opt_o);
 GetOptions ('verbose|v' => \$opt_v,
 			'extract|x' => \$opt_x,
 			'create|c' => \$opt_c,
+			'outdir|C=s' => \$opt_o,
 			'list|t' => \$opt_t, 
 			'mphr|m=s' => \$opt_m,
 			'help|?' => sub { VERSION_MESSAGE(\*STDOUT); HELP_MESSAGE(\*STDOUT); },
 			'version' => sub { VERSION_MESSAGE(\*STDOUT); } );
+
+our $output_dir = defined $opt_o ? $opt_o : ".";
+
 
 ########### 1. Unwrapping #############################
 
@@ -125,7 +129,7 @@ elsif (defined $opt_c) {
 			close FOUT;
 			unlink $temp_name;
 			die "MPHR file doesn't follow the naming convention. Should be in the format:
-				GRAS_M02_1A_xxSENS_STARTxx_xxSENS_STOPxxx_N_O_xxxPROC_STARTx.mphr\n";
+				GRAS_1A_M02_xxSENS_STARTxx_xxSENS_STOPxxx_N_O_xxxPROC_STARTx.mphr\n";
 		}
 		($lev, $sat, $sens_start, $sens_stop, $processing_mode, $disp_mode, $processing_start, $processing_stop) = ($1, $2, $3, $4, $5, $6, $7, $7);
 	}	
@@ -156,11 +160,11 @@ elsif (defined $opt_c) {
 		$processing_start = $lprocess_start if ($processing_start gt $lprocess_start);
 		$processing_stop = $lprocess_start if ($processing_stop lt $lprocess_start);
 
-		if ($processing_mode ne $lproc_mode || $disp_mode ne $ldisp_mode) {
-			close FOUT;
-			unlink $temp_name;
-			die "Something is wrong. proc_mode, disp_mode: $lproc_mode, $ldisp_mode, should be: $processing_mode, $disp_mode\n";
-		}
+#		if ($processing_mode ne $lproc_mode || $disp_mode ne $ldisp_mode) {
+#			close FOUT;
+#			unlink $temp_name;
+#			die "Something is wrong. proc_mode, disp_mode: $lproc_mode, $ldisp_mode, should be: $processing_mode, $disp_mode\n";
+#		}
 
 		my $fsize = -s $ARGV[$i];
 		my $buf_mdr = &read_file( $ARGV[$i] );
@@ -181,11 +185,11 @@ elsif (defined $opt_c) {
 	
 	close FOUT;
 
-	rename $temp_name, $new_eps_name;
+	rename $temp_name, $output_dir . '/' . $new_eps_name;
 
 	update_mphr( $mdrs_count, $sens_start, $sens_stop, $processing_start, $processing_stop, $new_eps_name );
 
-	print "$new_eps_name file created\n";
+	print "$output_dir/$new_eps_name file created\n";
 	
 }
 else {
@@ -203,9 +207,9 @@ sub update_mphr
 {
 	my ($mdrs_count, $sens_start, $sens_stop, $processing_start, $processing_stop, $new_eps_name ) = @_;
 	
-	my $fsize = -s $new_eps_name;
+	my $fsize = -s "$output_dir/$new_eps_name";
 	
-	sysopen(F,"$new_eps_name", O_RDWR) || die "can't open $!\n";
+	sysopen(F,"$output_dir/$new_eps_name", O_RDWR) || die "can't open '$new_eps_name' $!\n";
 	
 	sysseek(F,0x34, SEEK_SET); ## PRODUCT_NAME
 	syswrite(F,$new_eps_name,0x43);
@@ -414,7 +418,7 @@ sub process_mdr
 	my $netcdf_fname = "GRAS_$mphr->{PROCESSING_LEVEL}_$mphr->{SPACECRAFT_ID}_$sens_start"."Z_$sens_stop"."Z_$mphr->{PROCESSING_MODE}_$mphr->{DISPOSITION_MODE}_$mphr->{PROCESSING_TIME_START}Z_$GPSSat\_$degInst$degProc.nc";
 
 	if (defined $opt_x) {	
-		if (sysopen(F1,"$netcdf_fname", O_CREAT|O_WRONLY)) {
+		if (sysopen(F1,"$output_dir/$netcdf_fname", O_CREAT|O_WRONLY)) {
 			syswrite(F1,$buf, $mdrRealSize);
 			close F1;
 			say( "MDR $mdrCount has been stored into '$netcdf_fname'" );
@@ -596,6 +600,7 @@ sub HELP_MESSAGE
 		  "-c           Create EPS product from a set of n4 files (NetCDF 4) and MPHR file. e.g:\n" . 
 		  "                 epsar -c -m <MPHR> <netCDF4 files to wrap>\n" .
 		  "-t           Lists the NetCDF files contained inside the EPS product.\n" .
+		  "-C           Output directory. Default ./\n" .
 		  "-v           Verbose output (default silent)\n" .
 		  "-m           For -c option defines MPHR file containing the correct product model\n".
 		  "--extract    same as -x\n".
