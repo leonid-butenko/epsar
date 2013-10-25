@@ -122,6 +122,10 @@ elsif (defined $opt_c) {
 	my ($lev, $sat, $sens_start, $sens_stop, $processing_mode, $disp_mode, $processing_start, $processing_stop) = (undef, undef, undef, undef, undef, undef, undef, undef);
 	if (defined $opt_m) {
 		my $buf = &read_file( $mphr_fname );
+		
+		if (length($buf) != 3307) {
+			die "mphr size: " . length($buf) . "! should be 3307 bytes\n";
+		}
 	
 		syswrite(FOUT,$buf, 3307);
 	
@@ -160,11 +164,11 @@ elsif (defined $opt_c) {
 		$processing_start = $lprocess_start if ($processing_start gt $lprocess_start);
 		$processing_stop = $lprocess_start if ($processing_stop lt $lprocess_start);
 
-#		if ($processing_mode ne $lproc_mode || $disp_mode ne $ldisp_mode) {
-#			close FOUT;
-#			unlink $temp_name;
-#			die "Something is wrong. proc_mode, disp_mode: $lproc_mode, $ldisp_mode, should be: $processing_mode, $disp_mode\n";
-#		}
+		if ($processing_mode ne $lproc_mode || $disp_mode ne $ldisp_mode) {
+			close FOUT;
+			unlink $temp_name;
+			die "Something is wrong. proc_mode, disp_mode: $lproc_mode, $ldisp_mode, should be: $processing_mode, $disp_mode\n";
+		}
 
 		my $fsize = -s $ARGV[$i];
 		my $buf_mdr = &read_file( $ARGV[$i] );
