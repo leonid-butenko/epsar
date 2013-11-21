@@ -212,13 +212,13 @@ elsif (defined $opt_c) {
 			&produce_ipr( \*FOUT, $buf_header );
 			$prev_ipr_type = $ipr_type;
 			$ipr_count++;
+			$prev_sens_stop = $lsens_stop;
 		}
 				
 		syswrite(FOUT,$buf_header, 20 + $ncdf_descr_size);
 		syswrite(FOUT,$buf_mdr, $fsize );
 		++$mdrs_count;
-		
-		$prev_sens_stop = $lsens_stop;
+		$prev_sens_stop = $lsens_stop if (!defined $prev_sens_stop || $prev_sens_stop < $lsens_stop);
 	}
 	
 	if (defined $prev_sens_stop && defined $prev_ipr_offset) {
