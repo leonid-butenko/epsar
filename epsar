@@ -29,7 +29,7 @@ use File::Copy;
 use Time::Local;
 use Getopt::Long;
 
-our $VERSION = "1.0";
+our $VERSION = "1.1";
 
 my $big_endian = pack("L", 1) eq pack("N", 1);
 my $ncdf_descr_size = 1+1+4+3;
@@ -663,7 +663,7 @@ sub VERSION_MESSAGE
 {
 	my $fh = shift;
 	
-	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012\n\n";
+	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012-2013\n\n";
 }
 
 sub HELP_MESSAGE
