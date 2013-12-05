@@ -672,9 +672,9 @@ sub HELP_MESSAGE
 	print $fh "epsar -x -c -v -t [-m <MPHR>] [-C <output dir>] <EPS_Product> [file1] ... [fileN]\n\n".
 		  "-x           Unwrap EPS product. e.g:\n" .
 		  "                 epsar -x <EPS_PRODUCT>\n" .
-		  "-c           Create EPS product from a set of n4 files (NetCDF 4) and MPHR file. e.g:\n" . 
-		  "                 epsar -c -m <MPHR> <netCDF4 files to wrap>\n" .
-		  "-t           Lists the NetCDF files contained inside the EPS product.\n" .
+		  "-c           Create EPS product from a set of product files (NetCDF4/BUFR) and MPHR file. e.g:\n" . 
+		  "                 epsar -c -m <MPHR> <netCDF4/BUFR files to wrap>\n" .
+		  "-t           Lists the NetCDF4/BUFR files contained inside the EPS product.\n" .
 		  "-C           Output directory. Default ./\n" .
 		  "-v           Verbose output (default silent)\n" .
 		  "-m           For -c option defines MPHR file containing the correct product model\n".

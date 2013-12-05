@@ -15,9 +15,9 @@ epsar -x -c -v -t [-m <MPHR>] [-C <output dir>] <EPS_Product> [file1] ... [fileN
 
 -x           Unwrap EPS product. e.g:
                  epsar -x <EPS_PRODUCT>
--c           Create EPS product from a set of n4 files (NetCDF 4) and MPHR file. e.g:
-                 epsar -c -m <MPHR> <netCDF4 files to wrap>
--t           Lists the NetCDF files contained inside the EPS product.
+-c           Create EPS product from a set of product files (NetCDF4/BUFR) and MPHR file. e.g:
+                 epsar -c -m <MPHR> <netCDF4/BUFR files to wrap>
+-t           Lists the NetCDF4/BUFR files contained inside the EPS product.
 -C           Output directory. Default ./
 -v           Verbose output (default silent)
 -m           For -c option defines MPHR file containing the correct product model
