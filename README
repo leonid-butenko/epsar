@@ -1,4 +1,4 @@
-EPSar v1.1                                  EUMETSAT (c) 2012-2013
+EPSar v1.2                                  EUMETSAT (c) 2012-2013
 
 EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF data records.
 
@@ -27,3 +27,8 @@ epsar -x -c -v -t [-m <MPHR>] [-C <output dir>] <EPS_Product> [file1] ... [fileN
 --outdir     same as -C
 --list       same as -t
 --mphr       same as -m
+
+
+What's new in 1.2:
+
++ Fixed IPR generation for multiple MDRs covering same time periods

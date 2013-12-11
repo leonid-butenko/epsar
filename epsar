@@ -29,7 +29,7 @@ use File::Copy;
 use Time::Local;
 use Getopt::Long;
 
-our $VERSION = "1.1";
+our $VERSION = "1.2";
 
 my $big_endian = pack("L", 1) eq pack("N", 1);
 my $ncdf_descr_size = 1+1+4+3;
@@ -113,7 +113,6 @@ if (defined $opt_x || defined $opt_t) {
 
 elsif (defined $opt_c) {
 
-	#die "MPHR is not provided (this feature is not implemented yet)\n" unless (defined $opt_m);
 	my $mphr_fname = $opt_m;
 	
 	my $temp_name = "$output_dir/GRAS_TEMP.$$." . time ;
@@ -142,21 +141,27 @@ elsif (defined $opt_c) {
 		empty_mphr( \*FOUT );
 	}
 
-	my $mdrs_count = 0;
+	# split files by extension
+		
+	my %splitted_by_extension = ();
+	my $re_eps = 'GRAS_(..)_(...)_(.{14})Z_(.{14})Z_(.)_(.)_(.{14})Z_(...)_(.)(.)(\..+)';
+
 	my $prev_ipr_type = -1;
 	my $ipr_type = -1;
-	my $ipr_count = 0;
-	my $prev_ipr_offset = undef;
 	my $prev_sens_stop = undef;
+	my $offset = 0;
+
+	my @mdrs = ();
+	my @iprs = ();
 	
-	for(my $i = 0; $i < scalar(@ARGV); $i++) {
-		unless ($ARGV[$i] =~ /GRAS_(..)_(...)_(.{14})Z_(.{14})Z_(.)_(.)_(.{14})Z_(...)_(.)(.)(\..+)/i) {
-			die "$ARGV[$i] is wrong name for MDR netCDF\n";
+	foreach my $chunk(@ARGV) {
+		unless ($chunk =~ /$re_eps/i) {
+			die "$chunk is wrong name for MDR netCDF\n";
 		};
 		my ($llev, $lsat, $lsens_start, $lsens_stop, $lproc_mode, $ldisp_mode, $lprocess_start, $lgps, $linst_degr, $lproc_degr, $ext) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 		my @mdr_version;
-	
+
 		if (defined $ext && lc($ext) eq '.nc') {
 			@mdr_version = (30, 1);
 			$ipr_type = 1;
@@ -167,7 +172,7 @@ elsif (defined $opt_c) {
 		}
 		else {
 			unlink $temp_name;
-			die "Unknown extension of the input file: '$ext': $ARGV[$i]\n";
+			die "Unknown extension of the input file: '$ext': $chunk\n";
 		}
 
 		# initialize default values from the first ncdf product (in case we don't have MPHR file)
@@ -192,47 +197,52 @@ elsif (defined $opt_c) {
 			die "Something is wrong. proc_mode, disp_mode: $lproc_mode, $ldisp_mode, should be: $processing_mode, $disp_mode\n";
 		}
 
-		my $fsize = -s $ARGV[$i];
-		my $buf_mdr = &read_file( $ARGV[$i] );
+		my $fsize = -s $chunk;
 
 		my ($mdr_start_days, $mdr_start_msecs) = str_to_scds( $lsens_start );
 		my ($mdr_stop_days, $mdr_stop_msecs) = str_to_scds( $lsens_stop );
-	
+
 		## producing an MDR		
 		my $buf_header = pack( "CCCCNnNnNCCNa3", 8, 6, $mdr_version[0], $mdr_version[1], $fsize+$ncdf_descr_size+20, 
 				$mdr_start_days, $mdr_start_msecs, $mdr_stop_days, $mdr_stop_msecs, 
 				($linst_degr eq 'N' ? 0 : 1), ($lproc_degr eq 'N' ? 0 : 1), $fsize, $lgps );
-
+		
 		if ($ipr_type != $prev_ipr_type) {
-
-			# need to close previous IPR
-			if (defined $prev_sens_stop && defined $prev_ipr_offset) {
-				update_prev_ipr( \*FOUT, $prev_sens_stop, $prev_ipr_offset );
-			}
-			$prev_ipr_offset = systell( \*FOUT );
-			&produce_ipr( \*FOUT, $buf_header );
+			push @iprs, {
+				mdr_header => $buf_header,
+				offset => $offset,
+			};
 			$prev_ipr_type = $ipr_type;
-			$ipr_count++;
-			$prev_sens_stop = $lsens_stop;
 		}
-				
-		syswrite(FOUT,$buf_header, 20 + $ncdf_descr_size);
-		syswrite(FOUT,$buf_mdr, $fsize );
-		++$mdrs_count;
-		$prev_sens_stop = $lsens_stop if (!defined $prev_sens_stop || $prev_sens_stop < $lsens_stop);
+			
+		push @mdrs, {
+			fn => $chunk,
+			header => $buf_header,
+			fsize => $fsize
+		};
+		
+		$offset += $fsize + $ncdf_descr_size + 20; # record_header and record descriptor
 	}
+
+	# write Records
 	
-	if (defined $prev_sens_stop && defined $prev_ipr_offset) {
-		update_prev_ipr( \*FOUT, $prev_sens_stop, $prev_ipr_offset );
+	foreach my $ipr(@iprs) {
+		&produce_ipr( \*FOUT, $ipr->{mdr_header}, $ipr->{offset} + scalar(@iprs)*27 + 3307, $sens_start, $sens_stop );
 	}
-	
-	my $new_eps_name = "GRAS_xxx_$lev\_$sat\_$sens_start" . "Z_$sens_stop" . "Z_$processing_mode\_$disp_mode\_$processing_start" . "Z";
+
+	foreach my $mdr(@mdrs) {
+		my $buf_mdr = &read_file( $mdr->{fn} );
+		syswrite(FOUT,$mdr->{header}, 20 + $ncdf_descr_size);
+		syswrite(FOUT,$buf_mdr, $mdr->{fsize} );
+	}	
 	
 	close FOUT;
 
+	my $new_eps_name = "GRAS_xxx_$lev\_$sat\_$sens_start" . "Z_$sens_stop" . "Z_$processing_mode\_$disp_mode\_$processing_start" . "Z";
+
 	rename $temp_name, $output_dir . '/' . $new_eps_name;
 
-	update_mphr( $mdrs_count, $sens_start, $sens_stop, $processing_start, $processing_stop, $new_eps_name, $ipr_count );
+	update_mphr( scalar(@mdrs), $sens_start, $sens_stop, $processing_start, $processing_stop, $new_eps_name, scalar(@iprs) );
 
 	print "$output_dir/$new_eps_name file created\n";
 }
@@ -321,24 +331,14 @@ sub update_mphr
 
 sub produce_ipr
 {
-	my ($fh, $rec_header) = @_;
+	my ($fh, $rec_header, $offset, $start_time, $stop_time) = @_;
 	my ($rec_class, $inst_grp, $subclass, $subclassV, $rec_size, $day_start, $usec_start, $day_end, $usec_end) = unpack('CCCCNnNnN', $rec_header);
-	my $offset = systell($fh);
-	my $ipr_buf = pack( "CCCCNnNnNCCCN", 3, 0, $rec_class, $subclassV, 27, $day_start, $usec_start, $day_end, $usec_end, $rec_class, $inst_grp, $subclass, $offset + 27);
+	my $ipr_buf = pack( "CCCCNnNnNCCCN", 3, 0, $rec_class, $subclassV, 27, 
+						(defined $start_time ? str_to_scds($start_time) : ($day_start, $usec_start)), 
+						(defined $stop_time ? str_to_scds($stop_time) : ($day_end, $usec_end)),
+						$rec_class, $inst_grp, $subclass, $offset);
 	
 	syswrite( $fh, $ipr_buf, length($ipr_buf) );
-}
-
-# updates sensing stop of the IPR. IPR must cover first and last records of the same type
-sub update_prev_ipr
-{
-	my ($fh, $sens_stop, $ipr_offset) = @_;
-	
-	my $t_bufr = pack('nN', str_to_scds( $sens_stop ) );
-	my $cur_offset = systell( $fh );
-	sysseek( $fh, $ipr_offset + 14, SEEK_SET );
-	syswrite( $fh, $t_bufr, 6 );
-	sysseek( $fh, $cur_offset, SEEK_SET );
 }
 
 sub read_file
