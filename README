@@ -1,6 +1,6 @@
 EPSar v1.2                                  EUMETSAT (c) 2012-2013
 
-EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF data records.
+EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF/BUFR data records.
 
 Author: leonid.butenko@eumetsat.int
 
