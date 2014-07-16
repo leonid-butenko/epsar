@@ -77,7 +77,7 @@ if (defined $opt_x || defined $opt_t) {
 	my $dirname = dirname($filename);
 	my $baseline = undef;
 
-    if ($basename =~ /\.(\d{4})$/) { # check for baseline in eps name
+    if ($basename =~ /_(\d{4})$/) { # check for baseline in eps name
         $baseline = $1;
     }
 
@@ -261,7 +261,7 @@ elsif (defined $opt_c) {
 	my $new_eps_name = "GRAS_xxx_$lev\_$sat\_$sens_start" . "Z_$sens_stop" . "Z_$processing_mode\_$disp_mode\_$processing_start" . "Z";
 	
 	if (defined $baseline) {
-	    $new_eps_name .= ".$baseline"
+	    $new_eps_name .= "_$baseline"
 	}
 
 	rename $temp_name, $output_dir . '/' . $new_eps_name;
