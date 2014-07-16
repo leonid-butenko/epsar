@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-## Copyright (c) 2012 EUMETSAT
+## Copyright (c) 2014 EUMETSAT
 
 ## EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF
 ## data records.
@@ -29,7 +29,7 @@ use File::Copy;
 use Time::Local;
 use Getopt::Long;
 
-our $VERSION = "1.2";
+our $VERSION = "1.4";
 
 my $big_endian = pack("L", 1) eq pack("N", 1);
 my $ncdf_descr_size = 1+1+4+3;
@@ -691,7 +691,7 @@ sub VERSION_MESSAGE
 {
 	my $fh = shift;
 	
-	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012-2013\n\n";
+	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012-2014\n\n";
 }
 
 sub HELP_MESSAGE
