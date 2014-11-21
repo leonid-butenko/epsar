@@ -29,7 +29,7 @@ use File::Copy;
 use Time::Local;
 use Getopt::Long;
 
-our $VERSION = "1.4";
+our $VERSION = "1.5";
 
 my $big_endian = pack("L", 1) eq pack("N", 1);
 my $ncdf_descr_size = 1+1+4+3;
@@ -194,7 +194,6 @@ elsif (defined $opt_c) {
 		if (!defined $baseline && defined $lbaseline) { # for the very first time
 		    $baseline = $lbaseline;
 		}
-
 		# initialize default values from the first ncdf product (in case we don't have MPHR file)
 		$lev = $llev unless (defined $lev);
 		$sat = $lsat unless (defined $sat);
@@ -211,11 +210,23 @@ elsif (defined $opt_c) {
 		$processing_start = $lprocess_start if ($processing_start gt $lprocess_start);
 		$processing_stop = $lprocess_start if ($processing_stop lt $lprocess_start);
 
-		if ($processing_mode ne $lproc_mode || $disp_mode ne $ldisp_mode) {
-			close FOUT;
-			unlink $temp_name;
-			die "Something is wrong. proc_mode, disp_mode: $lproc_mode, $ldisp_mode, should be: $processing_mode, $disp_mode\n";
+		if ($llev ne $lev) {
+		    unlink $temp_name;
+		    die "Error! $chunk has proc_level '$llev'. Expected '$lev'\n";
 		}
+		if ($lproc_mode ne $processing_mode) {
+		    unlink $temp_name;
+		    die "Error! $chunk has proc_mode '$lproc_mode'. Expected '$processing_mode'\n";
+		}
+		if ($ldisp_mode ne $disp_mode) {
+		    unlink $temp_name;
+		    die "Error! $chunk has disp_mode '$ldisp_mode'. Expected '$disp_mode'\n";
+		}
+		if ($lsat ne $sat) {
+		    unlink $temp_name;
+		    die "Error! $chunk has sat '$lsat'. Expected '$sat'\n";
+		}
+
 
 		my $fsize = -s $chunk;
 
@@ -266,7 +277,7 @@ elsif (defined $opt_c) {
 
 	rename $temp_name, $output_dir . '/' . $new_eps_name;
 
-	update_mphr( scalar(@mdrs), $sens_start, $sens_stop, $processing_start, $processing_stop, $new_eps_name, scalar(@iprs) );
+	update_mphr( scalar(@mdrs), $sat, $sens_start, $sens_stop, $lev, $processing_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, scalar(@iprs) );
 
 	print "$output_dir/$new_eps_name file created\n";
 }
@@ -284,7 +295,7 @@ sub systell { sysseek($_[0], 0, SEEK_CUR) }
 ##
 sub update_mphr
 {
-	my ($mdrs_count, $sens_start, $sens_stop, $processing_start, $processing_stop, $new_eps_name, $ipr_count ) = @_;
+	my ($mdrs_count, $sat, $sens_start, $sens_stop, $proc_level, $proc_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, $ipr_count ) = @_;
 	
 	my $fsize = -s "$output_dir/$new_eps_name";
 	
@@ -299,6 +310,12 @@ sub update_mphr
 	sysseek(F,0x34, SEEK_SET); ## PRODUCT_NAME
 	syswrite(F,$new_eps_name,0x43);
 
+	sysseek(F,0x295, SEEK_SET); ## PROCESSING LEVEL
+	syswrite(F,$proc_level,0x02);
+
+	sysseek(F,0x2b8, SEEK_SET); ## Sat
+	syswrite(F,$sat,0x03);
+
 	sysseek(F,0x2dc, SEEK_SET); ## SENSING_START
 	syswrite(F,$sens_start,0xE);
 
@@ -310,6 +327,13 @@ sub update_mphr
 
 	sysseek(F,0x489, SEEK_SET); ## PROCESSING_STOP
 	syswrite(F,$processing_stop,0xE);
+
+	sysseek(F,0x4b9, SEEK_SET); ## PROCESSING MODE
+	syswrite(F,$proc_mode,0x01);
+
+	sysseek(F,0x4db, SEEK_SET); ## DISPOSITION MODE
+	syswrite(F,$disp_mode,0x01);
+
 	
 	sysseek(F,0x5cd, SEEK_SET); ## ACTUAL_PRODUCT_SIZE
 	my $tmp_str = sprintf( "%11d", $fsize);
@@ -472,6 +496,10 @@ sub read_mphr()
 sub process_mdr
 {
 	my ($fh, $mphr, $eRecSubclass, $nSubclVer, $recSize, $usiCDSdStart, $uliCDSmsStart, $usiCDSdStop, $uliCDSmsStop, $baseline) = @_;
+
+    if ($eRecSubclass == 1) { # skip Dummy MDRs
+        return;
+    }
 	
 	my $buf;
 	if (sysread($fh,$buf,$ncdf_descr_size) != $ncdf_descr_size) {
@@ -481,7 +509,7 @@ sub process_mdr
 	
 	my ($degradedInstMdr, $degradedProcMdr, $mdrRealSize, $GPSSat) = unpack("CCNa3", $buf);
 	
-	#print "MDR: gpsSat: $GPSSat, recSize: $recSize, RealSize: $mdrRealSize, degInstMdr: $degradedInstMdr, degProcMdr: $degradedProcMdr\n";
+	#print "MDR: gpsSat: $GPSSat, eRecSubclass: $eRecSubclass, recSize: $recSize, RealSize: $mdrRealSize, degInstMdr: $degradedInstMdr, degProcMdr: $degradedProcMdr\n";
 
 	my $readSize = sysread($fh, $buf, $mdrRealSize);
 	if ($readSize != $mdrRealSize) {
