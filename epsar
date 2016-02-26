@@ -155,6 +155,8 @@ elsif (defined $opt_c) {
 	my $ipr_type = -1;
 	my $prev_sens_stop = undef;
 	my $offset = 0;
+	my $degr_inst_mdr = 0;
+	my $degr_proc_mdr = 0;
 
 	my @mdrs = ();
 	my @iprs = ();
@@ -203,6 +205,8 @@ elsif (defined $opt_c) {
 		$disp_mode = $ldisp_mode unless (defined $disp_mode);
 		$processing_start = $lprocess_start unless (defined $processing_start);
 		$processing_stop = $lprocess_start unless (defined $processing_stop);
+		$degr_inst_mdr += ($linst_degr eq 'N' ? 0 : 1);
+		$degr_proc_mdr += ($lproc_degr eq 'N' ? 0 : 1);
 
 		## updating minimum and maximum time values 		
 		$sens_start = $lsens_start if ($sens_start gt $lsens_start);
@@ -277,7 +281,7 @@ elsif (defined $opt_c) {
 
 	rename $temp_name, $output_dir . '/' . $new_eps_name;
 
-	update_mphr( scalar(@mdrs), $sat, $sens_start, $sens_stop, $lev, $processing_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, scalar(@iprs) );
+	update_mphr( scalar(@mdrs), $sat, $sens_start, $sens_stop, $lev, $processing_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, scalar(@iprs), $degr_inst_mdr, $degr_proc_mdr );
 
 	print "$output_dir/$new_eps_name file created\n";
 }
@@ -295,7 +299,7 @@ sub systell { sysseek($_[0], 0, SEEK_CUR) }
 ##
 sub update_mphr
 {
-	my ($mdrs_count, $sat, $sens_start, $sens_stop, $proc_level, $proc_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, $ipr_count ) = @_;
+	my ($mdrs_count, $sat, $sens_start, $sens_stop, $proc_level, $proc_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, $ipr_count, $degr_inst_mdr, $degr_proc_mdr ) = @_;
 	
 	my $fsize = -s "$output_dir/$new_eps_name";
 	
@@ -368,9 +372,11 @@ sub update_mphr
 	sysseek(F,0x0b5d, SEEK_SET); ## TOTAL_VEADR
 	syswrite(F, $tmp_str, 6);
 
+	$tmp_str = sprintf( "%6d", (defined($degr_inst_mdr)?$degr_inst_mdr:0) );
 	sysseek(F,0x0bd2, SEEK_SET); ## COUNT_DEGRADED_INST_MDR
 	syswrite(F, $tmp_str, 6);
 
+	$tmp_str = sprintf( "%6d", (defined($degr_proc_mdr)?$degr_proc_mdr:0) );
 	sysseek(F,0x0bf9, SEEK_SET); ## COUNT_DEGRADED_PROC_MDR
 	syswrite(F, $tmp_str, 6);
 	
