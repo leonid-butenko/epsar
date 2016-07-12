@@ -46,7 +46,7 @@ GetOptions ('verbose|v' => \$opt_v,
 			'extract|x' => \$opt_x,
 			'create|c' => \$opt_c,
 			'outdir|C=s' => \$opt_o,
-			'list|t' => \$opt_t, 
+			'list|t' => \$opt_t,
 			'mphr|m=s' => \$opt_m,
 			'help|?' => sub { VERSION_MESSAGE(\*STDOUT); HELP_MESSAGE(\*STDOUT); },
 			'version' => sub { VERSION_MESSAGE(\*STDOUT); } );
@@ -65,9 +65,9 @@ if (defined $opt_x || defined $opt_t) {
 		$pack = 1;
 
 		system("gzip -d $filename");
-	
+
 		$filename = $1;
-	
+
 		die "unpacking failed\n" unless -f $filename;
 	}
 
@@ -86,16 +86,16 @@ if (defined $opt_x || defined $opt_t) {
 	my $mphr = undef;
 
 	while (sysread(F,$buf,20) == 20) {
-		my ($eRecClass, $eInstGroup, $eRecSubclass, $nSubclVer, $recSize, 
+		my ($eRecClass, $eInstGroup, $eRecSubclass, $nSubclVer, $recSize,
 			$usiCDSdStart, $uliCDSmsStart, $usiCDSdStop, $uliCDSmsStop) = unpack( "CCCCNnNnN", $buf );
-		
+
 		if ($eRecClass == 1) { #MPHR
 			$mphr = &read_mphr( \*F, $opt_t );
 			sysseek(F,20, SEEK_SET)
 		}
 		elsif ($eRecClass == 8) { # MDR
 			my $pos = systell( \*F );
-			process_mdr( \*F, $mphr, $eRecSubclass, $nSubclVer, $recSize, $usiCDSdStart, $uliCDSmsStart, $usiCDSdStop, $uliCDSmsStop, $baseline ); 
+			process_mdr( \*F, $mphr, $eRecSubclass, $nSubclVer, $recSize, $usiCDSdStart, $uliCDSmsStart, $usiCDSdStop, $uliCDSmsStop, $baseline );
 			sysseek(F,$pos, SEEK_SET);
 			$mdrCount++;
 		}
@@ -119,21 +119,21 @@ if (defined $opt_x || defined $opt_t) {
 elsif (defined $opt_c) {
 
 	my $mphr_fname = $opt_m;
-	
+
 	my $temp_name = "$output_dir/GRAS_TEMP.$$." . time ;
-	
+
 	sysopen(FOUT,"$temp_name", O_CREAT|O_WRONLY) || die "can't create $!\n";
 	my ($lev, $sat, $sens_start, $sens_stop, $processing_mode, $disp_mode, $processing_start, $processing_stop, $baseline) = (undef, undef, undef, undef, undef, undef, undef, undef, undef);
 	if (defined $opt_m) {
 		my $buf = &read_file( $mphr_fname );
-		
+
 		if (length($buf) != 3307) {
 			unlink $temp_name;
 			die "mphr size: " . length($buf) . "! should be 3307 bytes\n";
 		}
-	
+
 		syswrite(FOUT,$buf, 3307);
-	
+
 		unless ($mphr_fname =~ /GRAS_(..)_(...)_(.{14})Z_(.{14})Z_(.)_(.)_(.{14})Z/) {
 			close FOUT;
 			unlink $temp_name;
@@ -141,13 +141,13 @@ elsif (defined $opt_c) {
 				GRAS_1A_M02_xxSENS_STARTxx_xxSENS_STOPxxx_N_O_xxxPROC_STARTx.mphr\n";
 		}
 		($lev, $sat, $sens_start, $sens_stop, $processing_mode, $disp_mode, $processing_start, $processing_stop) = ($1, $2, $3, $4, $5, $6, $7, $7);
-	}	
+	}
 	else {
 		empty_mphr( \*FOUT );
 	}
 
 	# split files by extension
-		
+
 	my %splitted_by_extension = ();
 	my $re_eps = 'GRAS_(..)_(...)_(.{14})Z_(.{14})Z_(.)_(.)_(.{14})Z_(...)_(.)(.)([_\d]{0,5})(\..+)';
 
@@ -160,7 +160,7 @@ elsif (defined $opt_c) {
 
 	my @mdrs = ();
 	my @iprs = ();
-	
+
 	foreach my $chunk(@ARGV) {
 		unless ($chunk =~ /$re_eps/i) {
 			die "$chunk is wrong name for MDR netCDF\n";
@@ -172,7 +172,7 @@ elsif (defined $opt_c) {
         }
         else {
             $lbaseline = undef;
-        } 
+        }
 
 		my @mdr_version;
 
@@ -188,7 +188,7 @@ elsif (defined $opt_c) {
 			unlink $temp_name;
 			die "Unknown extension of the input file: '$ext': $chunk\n";
 		}
-		
+
 		if (defined $baseline && !defined $lbaseline) {
 		    unlink $temp_name;
 		    die "Baseline inconsitency detected for $chunk : baseline expected: $baseline\n";
@@ -208,7 +208,7 @@ elsif (defined $opt_c) {
 		$degr_inst_mdr += ($linst_degr eq 'N' ? 0 : 1);
 		$degr_proc_mdr += ($lproc_degr eq 'N' ? 0 : 1);
 
-		## updating minimum and maximum time values 		
+		## updating minimum and maximum time values
 		$sens_start = $lsens_start if ($sens_start gt $lsens_start);
 		$sens_stop = $lsens_stop if ($sens_stop lt $lsens_stop);
 		$processing_start = $lprocess_start if ($processing_start gt $lprocess_start);
@@ -237,11 +237,11 @@ elsif (defined $opt_c) {
 		my ($mdr_start_days, $mdr_start_msecs) = str_to_scds( $lsens_start );
 		my ($mdr_stop_days, $mdr_stop_msecs) = str_to_scds( $lsens_stop );
 
-		## producing an MDR		
-		my $buf_header = pack( "CCCCNnNnNCCNa3", 8, 6, $mdr_version[0], $mdr_version[1], $fsize+$ncdf_descr_size+20, 
-				$mdr_start_days, $mdr_start_msecs, $mdr_stop_days, $mdr_stop_msecs, 
+		## producing an MDR
+		my $buf_header = pack( "CCCCNnNnNCCNa3", 8, 6, $mdr_version[0], $mdr_version[1], $fsize+$ncdf_descr_size+20,
+				$mdr_start_days, $mdr_start_msecs, $mdr_stop_days, $mdr_stop_msecs,
 				($linst_degr eq 'N' ? 0 : 1), ($lproc_degr eq 'N' ? 0 : 1), $fsize, $lgps );
-		
+
 		if ($ipr_type != $prev_ipr_type) {
 			push @iprs, {
 				mdr_header => $buf_header,
@@ -249,18 +249,18 @@ elsif (defined $opt_c) {
 			};
 			$prev_ipr_type = $ipr_type;
 		}
-			
+
 		push @mdrs, {
 			fn => $chunk,
 			header => $buf_header,
 			fsize => $fsize
 		};
-		
+
 		$offset += $fsize + $ncdf_descr_size + 20; # record_header and record descriptor
 	}
 
 	# write Records
-	
+
 	foreach my $ipr(@iprs) {
 		&produce_ipr( \*FOUT, $ipr->{mdr_header}, $ipr->{offset} + scalar(@iprs)*27 + 3307, $sens_start, $sens_stop );
 	}
@@ -269,12 +269,12 @@ elsif (defined $opt_c) {
 		my $buf_mdr = &read_file( $mdr->{fn} );
 		syswrite(FOUT,$mdr->{header}, 20 + $ncdf_descr_size);
 		syswrite(FOUT,$buf_mdr, $mdr->{fsize} );
-	}	
-	
+	}
+
 	close FOUT;
 
 	my $new_eps_name = "GRAS_xxx_$lev\_$sat\_$sens_start" . "Z_$sens_stop" . "Z_$processing_mode\_$disp_mode\_$processing_start" . "Z";
-	
+
 	if (defined $baseline) {
 	    $new_eps_name .= "_$baseline"
 	}
@@ -286,7 +286,7 @@ elsif (defined $opt_c) {
 	print "$output_dir/$new_eps_name file created\n";
 }
 else {
-	VERSION_MESSAGE(\*STDOUT); 
+	VERSION_MESSAGE(\*STDOUT);
 	HELP_MESSAGE(\*STDOUT);
 }
 
@@ -295,22 +295,22 @@ exit (0);
 sub systell { sysseek($_[0], 0, SEEK_CUR) }
 
 ################################################################
-### updates mphr fields of newly constructed product. 
+### updates mphr fields of newly constructed product.
 ##
 sub update_mphr
 {
 	my ($mdrs_count, $sat, $sens_start, $sens_stop, $proc_level, $proc_mode, $disp_mode, $processing_start, $processing_stop, $new_eps_name, $ipr_count, $degr_inst_mdr, $degr_proc_mdr ) = @_;
-	
+
 	my $fsize = -s "$output_dir/$new_eps_name";
-	
+
 	sysopen(F,"$output_dir/$new_eps_name", O_RDWR) || die "can't open '$new_eps_name' $!\n";
-	
+
 	my ($mphr_start_days, $mphr_start_msecs) = str_to_scds( $sens_start );
 	my ($mphr_stop_days, $mphr_stop_msecs) = str_to_scds( $sens_stop );
 	my $buf_header = pack("nNnN", $mphr_start_days, $mphr_start_msecs, $mphr_stop_days, $mphr_stop_msecs );
 	sysseek(F,0x08, SEEK_SET);
 	syswrite(F, $buf_header, 12 ); # MPHR record header start-end update
-	
+
 	sysseek(F,0x34, SEEK_SET); ## PRODUCT_NAME
 	syswrite(F,$new_eps_name,0x43);
 
@@ -325,7 +325,7 @@ sub update_mphr
 
 	sysseek(F,0x30c, SEEK_SET); ## SENSING_STOP
 	syswrite(F,$sens_stop,0xE);
-		
+
 	sysseek(F,0x459, SEEK_SET); ## PROCESSING_START
 	syswrite(F,$processing_start,0xE);
 
@@ -341,7 +341,7 @@ sub update_mphr
 	sysseek(F,0x5cd, SEEK_SET); ## ACTUAL_PRODUCT_SIZE
 	my $tmp_str = sprintf( "%11d", $fsize);
 	syswrite(F, $tmp_str, 11);
-	
+
 	sysseek(F,0x0a73, SEEK_SET); ## TOTAL_RECORDS
 	$tmp_str = sprintf( "%6d", $mdrs_count+$ipr_count+1);
 	syswrite(F, $tmp_str, 6);
@@ -361,10 +361,10 @@ sub update_mphr
 	sysseek(F,0x0ac1, SEEK_SET); ## TOTAL_SPHR
 	$tmp_str = sprintf( "%6d", 0);
 	syswrite(F, $tmp_str, 6);
-	
+
 	sysseek(F,0x0b0f, SEEK_SET); ## TOTAL_GEADR
 	syswrite(F, $tmp_str, 6);
-	
+
 	sysseek(F,0x0b36, SEEK_SET); ## TOTAL_GIADR
 	syswrite(F, $tmp_str, 6);
 
@@ -378,7 +378,7 @@ sub update_mphr
 	$tmp_str = sprintf( "%6d", (defined($degr_proc_mdr)?$degr_proc_mdr:0) );
 	sysseek(F,0x0bf9, SEEK_SET); ## COUNT_DEGRADED_PROC_MDR
 	syswrite(F, $tmp_str, 6);
-	
+
 	close F;
 }
 
@@ -386,18 +386,18 @@ sub produce_ipr
 {
 	my ($fh, $rec_header, $offset, $start_time, $stop_time) = @_;
 	my ($rec_class, $inst_grp, $subclass, $subclassV, $rec_size, $day_start, $usec_start, $day_end, $usec_end) = unpack('CCCCNnNnN', $rec_header);
-	my $ipr_buf = pack( "CCCCNnNnNCCCN", 3, 0, $rec_class, $subclassV, 27, 
-						(defined $start_time ? str_to_scds($start_time) : ($day_start, $usec_start)), 
+	my $ipr_buf = pack( "CCCCNnNnNCCCN", 3, 0, $rec_class, $subclassV, 27,
+						(defined $start_time ? str_to_scds($start_time) : ($day_start, $usec_start)),
 						(defined $stop_time ? str_to_scds($stop_time) : ($day_end, $usec_end)),
 						$rec_class, $inst_grp, $subclass, $offset);
-	
+
 	syswrite( $fh, $ipr_buf, length($ipr_buf) );
 }
 
 sub read_file
 {
 	my ($fname) = @_;
-	
+
 	sysopen(FIN,"$fname", O_RDONLY) || die "file not exist $!\n";
 
 	my $fsize = -s $fname;
@@ -407,13 +407,13 @@ sub read_file
 	my $buf;
 	sysseek(FIN,0x0, SEEK_SET);
 	sysread(FIN,$buf,$fsize);
-	
+
 	close FIN;
-	
+
 	return $buf;
 }
 
-sub read_mphr() 
+sub read_mphr()
 {
 	my ($fh, $dont_store) = @_;
 	my $mphr = {
@@ -431,7 +431,7 @@ sub read_mphr()
 		TOTAL_MDR => ""
 	};
 	my $pattern = '^(\w{4}_\w{3}_.._)M02(_\d{14}Z_\d{14}Z_._._\d{14}.*)$';
-	
+
 	sysseek($fh,0x34, SEEK_SET);
 	sysread($fh,$mphr->{PRODUCT_NAME},0x43);
 
@@ -452,7 +452,7 @@ sub read_mphr()
 
 	sysseek($fh,0x30c, SEEK_SET);
 	sysread($fh,$mphr->{SENSING_STOP},0xE);
-	
+
 	sysseek($fh,0x39c, SEEK_SET);
 	sysread($fh,$mphr->{PROCESSING_CENTRE},0x4);
 
@@ -461,7 +461,7 @@ sub read_mphr()
 
 	sysseek($fh,0x4db, SEEK_SET);
 	sysread($fh,$mphr->{DISPOSITION_MODE},0x1);
-	
+
 	sysseek($fh,0x459, SEEK_SET);
 	sysread($fh,$mphr->{PROCESSING_TIME_START},0xE);
 
@@ -482,9 +482,9 @@ sub read_mphr()
 		my $buf;
 		sysseek($fh,0x0, SEEK_SET);
 		sysread($fh,$buf,3307);
-	
+
 		my $mphr_fname = "GRAS_$mphr->{PROCESSING_LEVEL}_$mphr->{SPACECRAFT_ID}_$mphr->{SENSING_START}Z_$mphr->{SENSING_STOP}Z_$mphr->{PROCESSING_MODE}_$mphr->{DISPOSITION_MODE}_$mphr->{PROCESSING_TIME_START}Z.mphr";
-	
+
 		if (sysopen(F1,"$output_dir/$mphr_fname", O_CREAT|O_WRONLY)) {
 			syswrite(F1,$buf, 3307);
 			close F1;
@@ -505,15 +505,15 @@ sub process_mdr
     if ($eRecSubclass == 1) { # skip Dummy MDRs
         return;
     }
-	
+
 	my $buf;
 	if (sysread($fh,$buf,$ncdf_descr_size) != $ncdf_descr_size) {
 		print "Warning, could not read from filehandle! Aborting...\n";
 		return;
 	}
-	
+
 	my ($degradedInstMdr, $degradedProcMdr, $mdrRealSize, $GPSSat) = unpack("CCNa3", $buf);
-	
+
 	#print "MDR: gpsSat: $GPSSat, eRecSubclass: $eRecSubclass, recSize: $recSize, RealSize: $mdrRealSize, degInstMdr: $degradedInstMdr, degProcMdr: $degradedProcMdr\n";
 
 	my $readSize = sysread($fh, $buf, $mdrRealSize);
@@ -525,7 +525,7 @@ sub process_mdr
 	my $sens_stop = scds_to_str( $usiCDSdStop, $uliCDSmsStop );
 	my $degInst = $degradedInstMdr ? 'D' : 'N';
 	my $degProc = $degradedProcMdr ? 'D' : 'N';
-	
+
 	## detect extension
 	my $extension = ".unknown";
 	if ($eRecSubclass == 30) {  ## NetCDF
@@ -534,14 +534,14 @@ sub process_mdr
 	elsif ($eRecSubclass == 31) { ## BUFR
 	    $extension = ".bufr";
 	}
-	
+
 	if (defined $baseline) {
 	    $extension = "_$baseline" . $extension;
 	}
-	
+
 	my $product_fname = "GRAS_$mphr->{PROCESSING_LEVEL}_$mphr->{SPACECRAFT_ID}_$sens_start"."Z_$sens_stop"."Z_$mphr->{PROCESSING_MODE}_$mphr->{DISPOSITION_MODE}_$mphr->{PROCESSING_TIME_START}Z_$GPSSat\_$degInst$degProc$extension";
 
-	if (defined $opt_x) {	
+	if (defined $opt_x) {
 		if (sysopen(F1,"$output_dir/$product_fname", O_CREAT|O_WRONLY)) {
 			syswrite(F1,$buf, $mdrRealSize);
 			close F1;
@@ -562,23 +562,23 @@ sub scds_to_str
 
 	my $t = int($days * SECONDS_PER_DAY + $msecs*1e-3 ) + EPS_EPOCH;
 	my @tm = gmtime( $t );
-	
+
 	return strftime( "%Y%m%d%H%M%S", @tm );
 }
 
 sub str_to_scds
 {
 	my ($str) = @_;
-	
+
 	my $year = substr $str, 0, 4;
 	my $mon = substr $str, 4, 2;
 	my $mday = substr $str, 6, 2;
 	my $hour = substr $str, 8, 2;
 	my $min = substr $str, 10, 2;
 	my $sec = substr $str, 12, 2;
-	
+
 	my $t = timegm( $sec, $min, $hour, $mday, $mon-1, $year-1900 );
-	
+
 	my $days = int (($t - EPS_EPOCH ) / SECONDS_PER_DAY);
 	my $msecs = int ( (($t - EPS_EPOCH) % SECONDS_PER_DAY)*1.e3 );
 	return ($days, $msecs);
@@ -587,13 +587,13 @@ sub str_to_scds
 sub get_now_scds
 {
 	my $t = timegm( gmtime() );
-	
+
 	my $days = int (($t - EPS_EPOCH ) / SECONDS_PER_DAY);
 	my $msecs = int ( (($t - EPS_EPOCH) % SECONDS_PER_DAY)*1.e3 );
 	return ($days, $msecs);
 }
 
-sub test_cds_strs 
+sub test_cds_strs
 {
 	my ($usiCDSdStart, $uliCDSmsStart, $usiCDSdStop, $uliCDSmsStop) = @_;
 
@@ -601,10 +601,10 @@ sub test_cds_strs
 	my $sens_stop = scds_to_str( $usiCDSdStop, $uliCDSmsStop );
 
 	print "$sens_start - $sens_stop\n";
-	
+
 	my ($days, $msecs) = str_to_scds( $sens_start );
 	print "start: $days, $msecs  vs $usiCDSdStart, $uliCDSmsStart\n";
-	
+
 	($days, $msecs) = str_to_scds( $sens_stop );
 	print "stop: $days, $msecs  vs $usiCDSdStop, $uliCDSmsStop\n";
 }
@@ -612,21 +612,21 @@ sub test_cds_strs
 sub test_str_scds
 {
     my ($str_time) = @_;
-    
+
     my ($days, $msecs) = str_to_scds( $str_time );
 	my $str_time_new = scds_to_str( $days, $msecs );
-	
+
     my ($days_new, $msecs_new) = str_to_scds( $str_time_new );
 
 	print "test_str_scds: numbers $days, $msecs vs $days_new, $msecs_new\n";
 	print "test_str_scds: strs $str_time vs $str_time_new\n";
-    return $str_time_new;	
+    return $str_time_new;
 }
 
 sub empty_mphr
 {
 	my $fh = shift;
-	
+
 	my @fields = (
 		'PRODUCT_NAME                  = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 		'PARENT_PRODUCT_NAME_1         = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -723,27 +723,21 @@ sub say
 sub VERSION_MESSAGE
 {
 	my $fh = shift;
-	
+
 	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012-2016\n\n";
 }
 
 sub HELP_MESSAGE
 {
 	my $fh = shift;
-	print $fh "epsar -x -c -v -t [-m <MPHR>] [-C <output dir>] <EPS_Product> [file1] ... [fileN]\n\n".
-		  "-x           Unwrap EPS product. e.g:\n" .
-		  "                 epsar -x <EPS_PRODUCT>\n" .
-		  "-c           Create EPS product from a set of product files (NetCDF4/BUFR) and MPHR file. e.g:\n" . 
-		  "                 epsar -c -m <MPHR> <netCDF4/BUFR files to wrap>\n" .
-		  "-t           Lists the NetCDF4/BUFR files contained inside the EPS product.\n" .
-		  "-C           Output directory. Default ./\n" .
-		  "-v           Verbose output (default silent)\n" .
-		  "-m           For -c option defines MPHR file containing the correct product model\n".
-		  "--extract    same as -x\n".
-		  "--create     same as -c\n".
-		  "--verbose    same as -v\n".
-		  "--outdir     same as -C\n".
-		  "--list       same as -t\n".
-		  "--mphr       same as -m\n".
+	print $fh "epsar -x -c -v -t [-m <MPHR>] [-C <output dir>] <EPS_Product> | [<file1>] ... [<fileN>]\n\n".
+		  "-x, --extract   Unwrap EPS product. e.g:\n" .
+		  "                   epsar -x <EPS_PRODUCT>\n" .
+		  "-c, --create    Create EPS product from a set of product files (NetCDF4/BUFR) and MPHR file. e.g:\n" .
+		  "                   epsar -c -m <MPHR> <netCDF4/BUFR files to wrap>\n" .
+		  "-t, --list      Lists the NetCDF4/BUFR files contained in the EPS product.\n" .
+		  "-C, --outgdir   Output directory (default is ./)\n" .
+		  "-v, --verbose   Verbose output (default is silent)\n" .
+		  "-m, --mphr      MPHR file with the product model for -c\n".
 		  "\n";
 }
