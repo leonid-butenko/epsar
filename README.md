@@ -1,4 +1,4 @@
-# EPSar v1.6                                  EUMETSAT (c) 2012-2016
+# EPSar v1.7                                  EUMETSAT (c) 2012-2016
 
 EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF and/or BUFR data records.
 
@@ -11,7 +11,7 @@ Author: leonid.butenko@eumetsat.int
 
 ## Usage
 
-    epsar -x -c -v -t [-m <MPHR>] [-C <output dir>] <EPS_Product> [<file1>...<fileN>]
+    epsar -x -c -v -t [-m [<MPHR>]] [-C <output dir>] <EPS_Product> [<file1>...<fileN>]
 
        -x, --extract   Unwrap EPS product, e.g:
                           epsar -x <EPS_PRODUCT>
@@ -20,7 +20,7 @@ Author: leonid.butenko@eumetsat.int
        -t, --list      Lists the NetCDF4/BUFR files contained in the EPS product.
        -C, --outdir    Output directory (default is ./)
        -v, --verbose   Verbose output (default is silent)
-       -m, --mphr      MPHR file with the product model for -c
+       -m, --mphr      MPHR file with the product model for -c (when extracting enables MPHR to be stored in a separate file)
 
 
 ## Examples
