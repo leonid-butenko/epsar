@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-## Copyright (c) 2012-2016 EUMETSAT
+## Copyright (c) 2012-2021 EUMETSAT
 
 ## EPSar is a tool for wrapping and unwrapping EPS products containing NetCDF
 ## data records.
@@ -29,7 +29,7 @@ use File::Copy;
 use Time::Local;
 use Getopt::Long;
 
-our $VERSION = "1.7";
+our $VERSION = "1.8";
 
 my $big_endian = pack("L", 1) eq pack("N", 1);
 my $ncdf_descr_size = 1+1+4+3;
@@ -493,7 +493,7 @@ sub read_mphr()
 			say( "MPHR has been stored into '$output_dir/$mphr_fname'" );
 		}
 		else {
-			die "Warning, could not open '$output_dir/$mphr_fname' file\n";
+			die "Error, could not open '$output_dir/$mphr_fname' file\n";
 		}
 	}
 
@@ -510,8 +510,7 @@ sub process_mdr
 
 	my $buf;
 	if (sysread($fh,$buf,$ncdf_descr_size) != $ncdf_descr_size) {
-		print "Warning, could not read from filehandle! Aborting...\n";
-		return;
+		die "Error, could not read from filehandle! Aborting...\n";
 	}
 
 	my ($degradedInstMdr, $degradedProcMdr, $mdrRealSize, $GPSSat) = unpack("CCNa3", $buf);
@@ -520,8 +519,7 @@ sub process_mdr
 
 	my $readSize = sysread($fh, $buf, $mdrRealSize);
 	if ($readSize != $mdrRealSize) {
-		print "Warning, could not read $mdrRealSize from file. Read $readSize instead... aborting unpacking mdr\n";
-		return;
+		die "Error, could not read $mdrRealSize from file. Read $readSize instead... aborting unpacking mdr\n";
 	}
 	my $sens_start = scds_to_str( $usiCDSdStart, $uliCDSmsStart );
 	my $sens_stop = scds_to_str( $usiCDSdStop, $uliCDSmsStop );
@@ -550,7 +548,7 @@ sub process_mdr
 			say( "MDR $mdrCount has been stored into '$output_dir/$product_fname'" );
 		}
 		else {
-			print "Warning, could not open '$output_dir/$product_fname' file\n";
+			die "Error, could not open '$output_dir/$product_fname' file\n";
 		}
 	}
 	else { # $opt_t option
@@ -726,7 +724,7 @@ sub VERSION_MESSAGE
 {
 	my $fh = shift;
 
-	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012-2016\n\n";
+	print $fh "EPSar v$VERSION                                  EUMETSAT (c) 2012-2021\n\n";
 }
 
 sub HELP_MESSAGE

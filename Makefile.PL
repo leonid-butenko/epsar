@@ -23,7 +23,7 @@ use ExtUtils::MakeMaker;
 
 my $mm = WriteMakefile(
     NAME              => 'EPSar',
-    VERSION           => "1.0",
+    VERSION           => "1.8",
     VERSION_FROM      => 'epsar', # finds $VERSION
     PREREQ_PM         => {}, # e.g., Module::Name => 1.1
     PREREQ_FATAL      => 1,
